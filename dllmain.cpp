@@ -1,3 +1,4 @@
+//this file may contain errors as i didnt update it i only updated patternscanner.cpp and hook.cpp (minor changes to this one on github only)
 #include <Windows.h>
 #include <iostream>
 #include "patternScanner.h"
@@ -13,7 +14,7 @@ void __stdcall thsFnc() {
 
 void threadmain() {
     DWORD* pointer{};
-    patternScanner<DWORD*, DWORD*> mainSig("\xB8\x05\x00\x00\x00 \x00\xB8\x41\x00\x00\x00 XEND", "memoryedit_Release_Win32.exe", &pointer); //mov eax 05  .. 00 mov eax 41
+    CPatternScanner<DWORD*, DWORD*> mainSig("\xB8\x05\x00\x00\x00 \x00\xB8\x41\x00\x00\x00 XEND", "memoryedit_Release_Win32.exe", &pointer); //mov eax 05  .. 00 mov eax 41
 
     std::cout << pointer << '\n';
     if (!pointer)
@@ -22,10 +23,10 @@ void threadmain() {
     CHAR saved[11]{};
     saved[10] = '\xC3';
 
-    callhook callHook((PBYTE)pointer, (PBYTE)thsFnc, 5, saved);
+    CCallhook callHook((PBYTE)pointer, (PBYTE)thsFnc, 5, saved);
 
     //call the code we overwrote // NEED TO DO SOMETHING BETTER SO THE FUNCTION WE CALL WILL BE ABLE TO DO THIS ALONE and also free memory at unhook
-    void(*fn)() = (void(*)())callHook.lpNewFunctionAddress;
+    void(*fn)() = (void(*)())callHook.m_lpNewFunctionAddress;
 
     if (!fn)
         return;
@@ -43,7 +44,7 @@ void threadmain() {
     std::cout << b << '\n';
     while (!GetAsyncKeyState(VK_END));
 
-    callHook.~callhook();
+    callHook.~CCallHook();
 
 
     return;
