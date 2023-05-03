@@ -1,10 +1,12 @@
 #include "patternScanner.h"
+#include <Windows.h>
+#include <Psapi.h>
 
 //all things we gonna be using
-template class patternScanner<DWORD*, DWORD*>;
+template class CPatternScanner<DWORD*, DWORD*>;
 
-template <class T, typename D> 
-UINT patternScanner<T, D>::getPatternLength(const char* pattern) {
+
+UINT GetPatternLength(const char* pattern) {
     UINT length = 0;
     while (strcmp(&pattern[length], " XEND")) {
         length++;
@@ -13,20 +15,19 @@ UINT patternScanner<T, D>::getPatternLength(const char* pattern) {
     return length;
 }
 
-template <class T, typename D> 
-BOOL patternScanner<T, D>::getMINFO(MODULEINFO* mInfo, const char* moduleName) {
-    HMODULE hBase = GetModuleHandle(moduleName);
+BOOL SetupModuleInformationClass(MODULEINFO* mInfo, const char* moduleName) {
+    CONST HMODULE hBase = GetModuleHandle(moduleName);
     if (!hBase) {
         return FALSE;
     }
 
-    DWORD procID = GetCurrentProcessId();
-    if (!procID) {
+    CONST DWORD procId = GetCurrentProcessId();
+    if (!procId) {
         return FALSE;
     }
 
-    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, 1, procID);
-    if (!hProcess) {
+    CONST HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, TRUE, procId);
+    if (!hProcess) { 
         return FALSE;
     }
 
@@ -40,15 +41,15 @@ BOOL patternScanner<T, D>::getMINFO(MODULEINFO* mInfo, const char* moduleName) {
 }
 
 template <class T, typename D>
-patternScanner<T, D>::patternScanner(const char* pattern, const char* moduleName, D* pointer) {
+CPatternScanner<T, D>::CPatternScanner(const char* pattern, const char* moduleName, D* pointer) {
     MODULEINFO mInfo{};
-    if (!getMINFO(&mInfo, moduleName))
+    if (!SetupModuleInformationClass(&mInfo, moduleName))
         return;
 
     PCHAR pCurByte = (PCHAR)mInfo.lpBaseOfDll;
     UINT equalBytes = 0;
 
-    UINT patternLength = getPatternLength(pattern);
+    CONST UINT patternLength = GetPatternLength(pattern);
 
     while (mInfo.SizeOfImage) {
         if (pattern[equalBytes] == ' ') {
@@ -61,10 +62,10 @@ patternScanner<T, D>::patternScanner(const char* pattern, const char* moduleName
                 return;
             }
 
-            PCHAR sv_pCurByte = pCurByte;
+            PCHAR pCurByteSaved = pCurByte;
             pCurByte += sizeof(T);
 
-            UINT bytesLeft = patternLength - equalBytes;
+            CONST UINT bytesLeft = patternLength - equalBytes;
             UINT equalBytesLeft = 0;
 
             while (equalBytesLeft < bytesLeft) {
@@ -78,13 +79,13 @@ patternScanner<T, D>::patternScanner(const char* pattern, const char* moduleName
 
             if (equalBytesLeft == bytesLeft) {
                 if (pointer)
-                    *pointer = (D)sv_pCurByte;
+                    *pointer = (D)pCurByteSaved;
 
-                m_tValue = *(T*)sv_pCurByte;
+                m_tValue = *(T*)pCurByteSaved;
                 return;
             }
 
-            pCurByte = sv_pCurByte;
+            pCurByte = pCurByteSaved;
             equalBytes = 0;
         }
 
