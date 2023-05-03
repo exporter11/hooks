@@ -1,24 +1,24 @@
 #pragma once
 #include <Windows.h>
-class vmthook {
+class CVmtHook {
 public:
-	vmthook(void* p_class, DWORD index, DWORD* replacer);
-	~vmthook();
+	CVmtHook(void* pClass, DWORD index, DWORD* replacer);
+	~CVmtHook();
 public:
 	DWORD* m_pOriginal;
 private:
-	DWORD** m_pVMTFunctionPointer;
+	DWORD** m_pVmtFunctionPointer_;
 };
 
-class callhook {
+class CCallHook {
 public:
-	callhook(PBYTE src, PBYTE callee, UINT bytesToFix, PCHAR outBytes);
-	~callhook();
+	CCallHook(PBYTE src, PBYTE callee, UINT bytesToFix, PCHAR outBytes);
+	~CCallHook();
 public:
 	// function pointer to new memory filled with saved bytes
-	LPVOID lpNewFunctionAddress;
+	LPVOID m_lpNewFunctionAddress;
 private:
-	CHAR ogBytes[16];
-	PBYTE svSrc;
-	UINT svBytesToFix;
+	CHAR m_pOgBytes_[16]{};
+	PBYTE m_pSvSrc_;
+	UINT m_uSvBytesToFix_;
 };
